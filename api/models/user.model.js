@@ -18,6 +18,13 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  
+    avatar:{
+      type:String,
+      default: "https://media.sproutsocial.com/uploads/2022/06/profile-picture.jpeg"
+    },
+
+    
 },{
     timestamps:true
 });
