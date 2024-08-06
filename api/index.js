@@ -5,6 +5,8 @@ import userRouter from '../api/routes/user.route.js';
 import authRouter from '../api/routes/auth.route.js';
 import cookieParser from 'cookie-parser';
 
+import listingRouter from '../api/routes/listing.route.js'
+
 dotenv.config();
 
 const app = express();
@@ -23,6 +25,7 @@ mongoose.connect(process.env.MONGO_URI)
 // Routes
 app.use('/api/user', userRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/listing', listingRouter);
 
 // Global Error Handler
 app.use((err, req, res, next) => {
