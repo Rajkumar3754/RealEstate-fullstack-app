@@ -7,3 +7,17 @@
 body{
     background-color: rgb(241,245,241);
 }
+
+
+@layer components {
+    .spinner {
+      @apply border-4 border-gray-200 border-t-transparent border-t-gray-900 rounded-full w-10 h-10 mx-auto;
+      animation: spin 1s linear infinite;
+    }
+  
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  }
+  
