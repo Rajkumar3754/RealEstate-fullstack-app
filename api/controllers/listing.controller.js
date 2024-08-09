@@ -101,3 +101,44 @@ export const createListing = async (req, res, next) => {
   }
 
 
+
+  export const getListings = async (req, res, next) => {
+    try {
+      // Destructure query parameters with defaults
+      const {
+        limit = 9,
+        startIndex = 0,
+        offer = 'all',
+        furnished = 'all',
+        parking = 'all',
+        type = 'all',
+        searchTerm = '',
+        sort = 'createdAt',
+        order = 'desc',
+      } = req.query;
+  
+      // Handle conditions for `offer`, `furnished`, `parking`, and `type`
+      const offerCondition = offer === 'all' ? { $in: [false, true] } : offer;
+      const furnishedCondition = furnished === 'all' ? { $in: [false, true] } : furnished;
+      const parkingCondition = parking === 'all' ? { $in: [false, true] } : parking;
+      const typeCondition = type === 'all' ? { $in: ['sale', 'rent'] } : type;
+  
+      // Query the database
+      const listings = await Listing.find({
+        name: { $regex: searchTerm, $options: 'i' },
+        offer: offerCondition,
+        furnished: furnishedCondition,
+        parking: parkingCondition,
+        type: typeCondition,
+      })
+        .sort({ [sort]: order })
+        .limit(parseInt(limit))
+        .skip(parseInt(startIndex));
+  
+      return res.status(200).json(listings);
+    } catch (error) {
+      next(error);
+    }
+  };
+  
+
