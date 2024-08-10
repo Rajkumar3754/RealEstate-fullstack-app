@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import ListingItem from '../Components/ListingItem';
 
 export default function Search() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarData, setSidebarData] = useState({
     searchTerm: '',
     type: 'all',
@@ -16,9 +17,10 @@ export default function Search() {
 
   const [loading, setLoading] = useState(false);
   const [listings, setListings] = useState([]);
+  const [showMore, setShowMore] = useState(false);
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(location.search);
 
     const searchTermFromUrl = urlParams.get('searchTerm') || '';
     const typeFromUrl = urlParams.get('type') || 'all';
@@ -40,11 +42,17 @@ export default function Search() {
 
     const fetchListings = async () => {
       setLoading(true);
+      setShowMore(false);
       try {
         const searchQuery = urlParams.toString();
         const res = await fetch(`/api/listing/get?${searchQuery}`);
         const data = await res.json();
         console.log('Fetched Listings:', data); // Log the listings data
+
+        if (data.length > 8) {
+          setShowMore(true);
+        }
+
         setListings(data);
       } catch (error) {
         console.error('Error fetching listings:', error);
@@ -54,30 +62,30 @@ export default function Search() {
     };
 
     fetchListings();
-  }, [window.location.search]);
+  }, [location.search]);
 
   const handleChange = (e) => {
     const { id, type, value, checked } = e.target;
 
     if (type === 'checkbox') {
-      setSidebarData(prevState => ({
+      setSidebarData((prevState) => ({
         ...prevState,
         [id]: checked,
       }));
     } else if (type === 'text') {
-      setSidebarData(prevState => ({
+      setSidebarData((prevState) => ({
         ...prevState,
         [id]: value,
       }));
     } else if (type === 'select-one') {
       const [sort, order] = value.split('_');
-      setSidebarData(prevState => ({
+      setSidebarData((prevState) => ({
         ...prevState,
         sort: sort || 'created_at',
         order: order || 'desc',
       }));
     } else if (type === 'radio') {
-      setSidebarData(prevState => ({
+      setSidebarData((prevState) => ({
         ...prevState,
         type: id,
       }));
@@ -97,6 +105,27 @@ export default function Search() {
     }).toString();
 
     navigate(`/search?${urlParams}`);
+  };
+
+  const onShowMoreClick = async () => {
+    const numberOfListings = listings.length;
+    const startIndex = numberOfListings;
+    const urlParams = new URLSearchParams(location.search);
+    urlParams.set('startIndex', startIndex);
+    const searchQuery = urlParams.toString();
+
+    try {
+      const res = await fetch(`/api/listing/get?${searchQuery}`);
+      const data = await res.json();
+
+      if (data.length < 9) {
+        setShowMore(false);
+      }
+
+      setListings((prevListings) => [...prevListings, ...data]);
+    } catch (error) {
+      console.error('Error fetching more listings:', error);
+    }
   };
 
   return (
@@ -209,31 +238,28 @@ export default function Search() {
       {/* Right side */}
       <div className='flex-1'>
         <h1 className='text-3xl font-semibold border-b p-3 text-slate-700 mt-5'>Listing results:</h1>
-      <div className='p-7 flex flex-col gap-4'>
-        {!loading && listings.length === 0 && (
+        <div className='p-7 flex flex-col gap-4'>
+          {!loading && listings.length === 0 && (
+            <p className='text-xl text-slate-700'>No listing found!</p>
+          )}
 
-            <p className='text-xl text-slate-700 '  >No listing found!</p>
+          {loading && (
+            <p className='text-xl text-slate-700 text-center w-full'>Loading...</p>
+          )}
 
+          {!loading && listings.map((listing) => (
+            <ListingItem key={listing._id} listing={listing} />
+          ))}
 
-        )}
-
-        {
-            loading && (
-                <p className='text-xl text-slate-700 text-center w-full'>Loading...</p>
-            )}
-
-        {
-                !loading && listings && listings.map((listing)=>(
-
-                    <ListingItem key={listing._id} listing={listing} />
-
-
-                ))
-
-        }
-        
-
-      </div>
+          {showMore && (
+            <button
+              onClick={onShowMoreClick}
+              className='text-green-700 hover:underline p-7 text-center w-full'
+            >
+              Show More
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
